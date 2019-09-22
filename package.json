@@ -1,0 +1,18 @@
+{
+  "name": "bullmq-bench",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "start": "tsc && node dist/index.js",
+    "watch": "tsc-watch --onSuccess \"node ./dist/index.js\" --onFailure \"echo Beep! Compilation Failed\" --compiler typescript/bin/tsc",
+    "build": "tsc"
+  },
+  "repository": "git@github.com:taskforcesh/bullmq-bench.git",
+  "author": "Manuel Astudillo <manuel@optimalbits.com>",
+  "license": "MIT",
+  "dependencies": {},
+  "devDependencies": {
+    "tsc-watch": "^4.0.0",
+    "typescript": "^3.6.3"
+  }
+}
