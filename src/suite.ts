@@ -1,11 +1,11 @@
 import { Benchmark } from "./benchmark";
 
 export class Suite {
-  benchmarks: Benchmark[] = [];
+  benchmarks: Benchmark<any, any>[] = [];
 
   constructor(private name: string) {}
 
-  add(benchmark: Benchmark) {
+  add(benchmark: Benchmark<any, any>) {
     this.benchmarks.push(benchmark);
   }
 
@@ -13,9 +13,8 @@ export class Suite {
     console.log(`Running suite: ${this.name}`);
     for (let i = 0; i < this.benchmarks.length; i++) {
       const benchmark = this.benchmarks[i];
-      await benchmark.start();
-      await benchmark.run();
-      await benchmark.end();
+      const result = await benchmark.execute();
+      console.log(`Result: ${JSON.stringify(result)}`);
     }
   }
 }
