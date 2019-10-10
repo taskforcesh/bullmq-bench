@@ -11,7 +11,7 @@ import * as Util from "./util";
 
 const QUEUE_ADD_BULK_SIZE = 100;
 
-const DEFAULT_CONFIG: any = {
+const DEFAULT_CONFIG = {
   type: "bullmq-worker-benchmark",
   warmupJobsNum: 100,
   benchmarkJobsNum: 1000,
@@ -59,7 +59,7 @@ export class BullmqWorkerBenchmark extends Benchmark<
     }
   }
 
-  public setUp = async (): Promise<void> => {
+  public async setUp(): Promise<void> {
     this.data = this.config.jobData;
     if (this.config.generateSampleJobData) {
       const { widthFactor, depthFactor } = this.config.generateSampleJobData;
@@ -97,7 +97,7 @@ export class BullmqWorkerBenchmark extends Benchmark<
     this.queue = queue;
   };
 
-  public run = async (): Promise<void> => {
+  public async run(): Promise<void> {
     const { result } = this.report;
     const {
       warmupJobsNum,
@@ -139,7 +139,7 @@ export class BullmqWorkerBenchmark extends Benchmark<
     });
   };
 
-  public tearDown = async (): Promise<void> => {
+  public async tearDown(): Promise<void> {
     if (this.queue) {
       await Util.flushQueueKeys(this.queue.client, this.config.queueName);
       await this.queue.close();

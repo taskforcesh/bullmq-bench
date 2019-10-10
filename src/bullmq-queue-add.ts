@@ -3,7 +3,7 @@ import Uuid from "uuid";
 import { Queue, QueueOptions, JobsOptions } from "bullmq";
 import * as Util from "./util";
 
-const DEFAULT_CONFIG: any = {
+const DEFAULT_CONFIG = {
   type: "bullmq-queue-add-benchmark",
   warmupJobsNum: 100,
   benchmarkJobsNum: 1000,
@@ -37,7 +37,7 @@ export class BullmqQueueAddBenchmark extends Benchmark<
     }
   }
 
-  public setUp = async (): Promise<void> => {
+  public async setUp(): Promise<void> {
     this.data = this.config.jobData;
     if (this.config.generateSampleJobData) {
       const { widthFactor, depthFactor } = this.config.generateSampleJobData;
@@ -50,7 +50,7 @@ export class BullmqQueueAddBenchmark extends Benchmark<
     this.queue = queue;
   };
 
-  public run = async (): Promise<void> => {
+  public async run(): Promise<void> {
     const { bulkSize } = this.config;
     if (bulkSize > 0) {
       await this.runBulk(bulkSize);
@@ -59,14 +59,14 @@ export class BullmqQueueAddBenchmark extends Benchmark<
     }
   };
 
-  public tearDown = async (): Promise<void> => {
+  public async tearDown(): Promise<void> {
     if (this.queue) {
       await Util.flushQueueKeys(this.queue.client, this.config.queueName);
       await this.queue.close();
     }
   };
 
-  private runBulk = async (bulkSize: number) => {
+  private async runBulk(bulkSize: number) {
     const { result } = this.report;
     const { warmupJobsNum, benchmarkJobsNum } = this.config;
     const jobsTotal = warmupJobsNum + benchmarkJobsNum;
@@ -95,7 +95,7 @@ export class BullmqQueueAddBenchmark extends Benchmark<
     }
   };
 
-  private runAdd = async () => {
+  private async runAdd() {
     const { result } = this.report;
     const { warmupJobsNum, benchmarkJobsNum } = this.config;
     const jobsTotal = warmupJobsNum + benchmarkJobsNum;

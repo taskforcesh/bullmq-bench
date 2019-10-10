@@ -1,6 +1,6 @@
 import { errorToObject } from "./util";
 
-const DEFAULT_CONFIG: any = {
+const DEFAULT_CONFIG = {
   timeout: 10000
 };
 
@@ -13,11 +13,11 @@ export abstract class Benchmark<
   protected report: R = { execution: {}, result: {} } as R;
 
   constructor(config: C, defaultConfig: any) {
-    this.config = Object.assign(
-      {},
-      Object.assign(DEFAULT_CONFIG, defaultConfig),
-      config
-    );
+    this.config = {
+      ...DEFAULT_CONFIG,
+      ...defaultConfig,
+      ...config
+    };
     if (!this.config.name) {
       throw new Error("config.name is required");
     }
@@ -30,14 +30,14 @@ export abstract class Benchmark<
     this.report.config = this.config;
   }
 
-  public execute = (): Promise<R> => {
+  public async execute(): Promise<R> {
     const { timeout } = this.config;
-    return new Promise<R>(resolve => {
+    return new Promise<R>(async resolve => {
       let timer: NodeJS.Timer;
 
       const resolveAndClearTimeout = () => {
         clearTimeout(timer);
-        resolve(Object.assign({}, this.report));
+        resolve({ ...this.report });
       };
 
       timer = setTimeout(() => {
@@ -50,30 +50,31 @@ export abstract class Benchmark<
 
       const startTime = Date.now();
       this.report.execution.executedOn = new Date().toISOString();
-      this.runFlow()
-        .then(() => {
-          this.report.execution.finishedOn = new Date().toISOString();
-          this.report.execution.totalDuration = Date.now() - startTime;
-          resolveAndClearTimeout();
-        })
-        .catch(error => {
-          this.report.execution.finishedOn = new Date().toISOString();
-          this.report.execution.totalDuration = Date.now() - startTime;
-          this.report.error = errorToObject(error);
-          resolveAndClearTimeout(); // always swallow rejections
-        });
+
+      try {
+        await this.runFlow();
+        this.report.execution.finishedOn = new Date().toISOString();
+        this.report.execution.totalDuration = Date.now() - startTime;
+        resolveAndClearTimeout();
+      } catch(error) {
+        this.report.execution.finishedOn = new Date().toISOString();
+        this.report.execution.totalDuration = Date.now() - startTime;
+        this.report.error = errorToObject(error);
+        resolveAndClearTimeout(); // always swallow rejections
+      }
+
     });
   };
 
-  public abort = (): void => {
+  public abort(): void {
     this.aborted = true;
   };
 
-  public getConfig = (): C => {
+  public getConfig(): C {
     return this.config;
   };
 
-  public getReport = (): R => {
+  public getReport(): R {
     return this.report;
   };
 
@@ -81,7 +82,7 @@ export abstract class Benchmark<
   protected abstract run(): Promise<void>;
   protected abstract tearDown(): Promise<void>;
 
-  private runFlow = async (): Promise<void> => {
+  private async runFlow(): Promise<void> {
     try {
       if (this.aborted) {
         throw new Error("aborted");
@@ -104,7 +105,7 @@ export abstract class Benchmark<
 }
 
 export interface BenchmarkConfig {
-  name?: string;
+  name: string;
   type?: string;
   timeout?: number; // milliseconds
 }
