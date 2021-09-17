@@ -1,8 +1,11 @@
 import Uuid from "uuid";
+import { Cluster, Redis } from 'ioredis';
 
-export const flushQueueKeys = (ioredis: any, queueName: string) => {
+type RedisClient = Redis | Cluster;
+
+export const flushQueueKeys = (ioredis: RedisClient, queueName: string) => {
   const pattern = `bull:${queueName}:*`;
-  return new Promise((resolve, reject) => {
+  return new Promise<void>((resolve, reject) => {
     const stream = ioredis.scanStream({
       match: pattern
     });
@@ -80,7 +83,7 @@ export const generateSampleDataObject = (
   return result;
 };
 
-export const getRedisVersion = async (ioredis: any): Promise<string> => {
+export const getRedisVersion = async (ioredis: RedisClient): Promise<string> => {
   const doc = await ioredis.info();
   const prefix = "redis_version:";
   const lines = doc.split("\r\n");
