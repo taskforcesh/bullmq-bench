@@ -4,7 +4,7 @@ import { BullmqWorkerBenchmark } from "./bullmq-worker";
 
 export class BullMQSuite extends Suite {
   constructor() {
-    super("BullMQ 4.0");
+    super("BullMQ 1.47.1");
 
     this.add(
       new BullmqQueueAddBenchmark({

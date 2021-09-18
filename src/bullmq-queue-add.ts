@@ -46,7 +46,8 @@ export class BullmqQueueAddBenchmark extends Benchmark<
 
     const queue = new Queue(this.config.queueName, {});
     await queue.waitUntilReady();
-    this.report.result.redisVersion = await Util.getRedisVersion(queue.client);
+    const client = await queue.client;
+    this.report.result.redisVersion = await Util.getRedisVersion(client);
     this.queue = queue;
   };
 
@@ -61,7 +62,8 @@ export class BullmqQueueAddBenchmark extends Benchmark<
 
   public async tearDown(): Promise<void> {
     if (this.queue) {
-      await Util.flushQueueKeys(this.queue.client, this.config.queueName);
+      const client = await this.queue.client;
+      await Util.flushQueueKeys(client, this.config.queueName);
       await this.queue.close();
     }
   };

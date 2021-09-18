@@ -93,7 +93,8 @@ export class BullmqWorkerBenchmark extends Benchmark<
       await queue.addBulk(bulk);
     }
 
-    this.report.result.redisVersion = await Util.getRedisVersion(queue.client);
+    const client = await queue.client;
+    this.report.result.redisVersion = await Util.getRedisVersion(client);
     this.queue = queue;
   };
 
@@ -132,7 +133,7 @@ export class BullmqWorkerBenchmark extends Benchmark<
       return this.result;
     });
 
-    await new Promise(resolve => {
+    await new Promise<void>(resolve => {
       this.worker.once("drained", async () => {
         resolve();
       });
@@ -141,7 +142,8 @@ export class BullmqWorkerBenchmark extends Benchmark<
 
   public async tearDown(): Promise<void> {
     if (this.queue) {
-      await Util.flushQueueKeys(this.queue.client, this.config.queueName);
+      const client = await this.queue.client;
+      await Util.flushQueueKeys(client, this.config.queueName);
       await this.queue.close();
     }
     if (this.worker) {
