@@ -12,19 +12,19 @@
   "author": "Manuel Astudillo <manuel@optimalbits.com>",
   "license": "MIT",
   "dependencies": {
-    "bullmq": "^1.47.1",
-    "uuid": "^3.3.3"
+    "bullmq": "^1.90.1",
+    "uuid": "^9.0.0"
   },
   "devDependencies": {
-    "@types/node": "^12.7.11",
-    "@types/uuid": "^3.4.5",
-    "prettier": "^1.18.2",
-    "ts-node": "^8.4.1",
-    "tsc-watch": "^4.0.0",
-    "tslint": "^5.12.0",
+    "@types/node": "^12.20.55",
+    "@types/uuid": "^8.3.4",
+    "prettier": "^1.19.1",
+    "ts-node": "^8.10.2",
+    "tsc-watch": "^4.6.2",
+    "tslint": "^5.20.1",
     "tslint-config-prettier": "^1.18.0",
     "tslint-eslint-rules": "^5.4.0",
-    "tslint-plugin-prettier": "^2.0.1",
-    "typescript": "^3.2.2"
+    "tslint-plugin-prettier": "^2.3.0",
+    "typescript": "^4.8.3"
   }
 }
