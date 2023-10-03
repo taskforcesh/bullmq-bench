@@ -1,13 +1,14 @@
 import { BullMQSuite } from "./bullmq-suite";
+import { log } from "./log";
 
 const runSuites = async () => {
-  console.log("Start running benchmark suites\n");
+  log.title("Start running benchmark suites\n");
 
   const bullMQSuite = new BullMQSuite();
 
   await bullMQSuite.run();
 
-  console.log("\nFinished running suites");
+  log.success("Finished running suites");
 };
 
 runSuites().catch(error => {

@@ -1,6 +1,8 @@
 import { Benchmark, BenchmarkConfig, BenchmarkReport } from "./benchmark";
-import Uuid from "uuid";
+import { v4 as uuidv4 } from "uuid";
 import { Queue, QueueOptions, JobsOptions } from "bullmq";
+import { Redis } from "ioredis";
+
 import * as Util from "./util";
 
 const DEFAULT_CONFIG = {
@@ -8,7 +10,13 @@ const DEFAULT_CONFIG = {
   warmupJobsNum: 100,
   benchmarkJobsNum: 1000,
   bulkSize: 0,
-  jobData: {}
+  jobData: {},
+};
+
+const connection = {
+  host: process.env.BULLMQ_BENCH_REDIS_HOST || "",
+  port: parseInt(process.env.BULLMQ_BENCH_REDIS_PORT || "6379", 10),
+  password: process.env.BULLMQ_BENCH_REDIS_PASSWORD || "",
 };
 
 export class BullmqQueueAddBenchmark extends Benchmark<
@@ -23,7 +31,7 @@ export class BullmqQueueAddBenchmark extends Benchmark<
     super(config, DEFAULT_CONFIG);
 
     if (!this.config.queueName) {
-      this.config.queueName = Uuid.v4();
+      this.config.queueName = uuidv4();
     }
 
     if (this.config.warmupJobsNum < 0) {
@@ -44,12 +52,12 @@ export class BullmqQueueAddBenchmark extends Benchmark<
       this.data = Util.generateSampleDataObject(widthFactor, depthFactor);
     }
 
-    const queue = new Queue(this.config.queueName, {});
+    const queue = new Queue(this.config.queueName, { connection });
     await queue.waitUntilReady();
     const client = await queue.client;
     this.report.result.redisVersion = await Util.getRedisVersion(client);
     this.queue = queue;
-  };
+  }
 
   public async run(): Promise<void> {
     const { bulkSize } = this.config;
@@ -58,15 +66,15 @@ export class BullmqQueueAddBenchmark extends Benchmark<
     } else {
       await this.runAdd();
     }
-  };
+  }
 
   public async tearDown(): Promise<void> {
     if (this.queue) {
       const client = await this.queue.client;
-      await Util.flushQueueKeys(client, this.config.queueName);
+      await Util.flushQueueKeys(client as Redis, this.config.queueName);
       await this.queue.close();
     }
-  };
+  }
 
   private async runBulk(bulkSize: number) {
     const { result } = this.report;
@@ -95,7 +103,7 @@ export class BullmqQueueAddBenchmark extends Benchmark<
       }
       await this.queue.addBulk(bulk);
     }
-  };
+  }
 
   private async runAdd() {
     const { result } = this.report;
@@ -115,7 +123,7 @@ export class BullmqQueueAddBenchmark extends Benchmark<
       }
       await this.queue.add("test", this.data, {});
     }
-  };
+  }
 }
 
 export interface BullmqQueueAddBenchmarkConfig extends BenchmarkConfig {

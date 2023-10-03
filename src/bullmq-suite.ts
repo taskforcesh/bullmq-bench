@@ -2,21 +2,24 @@ import { Suite } from "./suite";
 import { BullmqQueueAddBenchmark } from "./bullmq-queue-add";
 import { BullmqWorkerBenchmark } from "./bullmq-worker";
 
+const pkg = require("../node_modules/bullmq/package.json");
+const bullmqVersion = pkg.version;
+
 export class BullMQSuite extends Suite {
   constructor() {
-    super("BullMQ 1.47.1");
+    super(`BullMQ ${bullmqVersion}`);
 
     this.add(
       new BullmqQueueAddBenchmark({
         name: "queue-add",
         timeout: 30000,
         warmupJobsNum: 1000,
-        benchmarkJobsNum: 10000,
+        benchmarkJobsNum: 1000,
         bulkSize: 0,
         generateSampleJobData: {
           widthFactor: 10,
-          depthFactor: 10
-        }
+          depthFactor: 10,
+        },
       })
     );
 
@@ -26,11 +29,11 @@ export class BullMQSuite extends Suite {
         timeout: 30000,
         warmupJobsNum: 1000,
         benchmarkJobsNum: 10000,
-        bulkSize: 100,
+        bulkSize: 50,
         generateSampleJobData: {
-          widthFactor: 10,
-          depthFactor: 10
-        }
+          widthFactor: 1,
+          depthFactor: 1,
+        },
       })
     );
 
@@ -39,15 +42,15 @@ export class BullMQSuite extends Suite {
         name: "worker-generic",
         timeout: 30000,
         warmupJobsNum: 1000,
-        benchmarkJobsNum: 10000,
+        benchmarkJobsNum: 1000,
         generateSampleJobData: {
-          widthFactor: 10,
-          depthFactor: 10
+          widthFactor: 1,
+          depthFactor: 1,
         },
         generateSampleJobResult: {
-          widthFactor: 10,
-          depthFactor: 10
-        }
+          widthFactor: 1,
+          depthFactor: 1,
+        },
       })
     );
 
@@ -58,16 +61,16 @@ export class BullMQSuite extends Suite {
         warmupJobsNum: 1000,
         benchmarkJobsNum: 10000,
         generateSampleJobData: {
-          widthFactor: 10,
-          depthFactor: 10
+          widthFactor: 1,
+          depthFactor: 1,
         },
         generateSampleJobResult: {
-          widthFactor: 10,
-          depthFactor: 10
+          widthFactor: 1,
+          depthFactor: 1,
         },
         workerOptions: {
-          concurrency: 10
-        }
+          concurrency: 100,
+        },
       })
     );
   }

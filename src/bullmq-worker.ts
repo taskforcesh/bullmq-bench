@@ -1,11 +1,14 @@
 import { Benchmark, BenchmarkConfig, BenchmarkReport } from "./benchmark";
-import Uuid from "uuid";
+import { v4 } from "uuid";
+import { Redis } from "ioredis";
+import { connection } from "./connection";
+
 import {
   Queue,
   Worker,
   QueueOptions,
   WorkerOptions,
-  JobsOptions
+  JobsOptions,
 } from "bullmq";
 import * as Util from "./util";
 
@@ -18,7 +21,7 @@ const DEFAULT_CONFIG = {
   jobData: {},
   jobResult: {},
   jobFailedReason: {},
-  jobFailureProbability: 0
+  jobFailureProbability: 0,
 };
 
 /*
@@ -39,7 +42,7 @@ export class BullmqWorkerBenchmark extends Benchmark<
     super(config, DEFAULT_CONFIG);
 
     if (!this.config.queueName) {
-      this.config.queueName = Uuid.v4();
+      this.config.queueName = v4();
     }
 
     if (this.config.warmupJobsNum < 0) {
@@ -74,7 +77,7 @@ export class BullmqWorkerBenchmark extends Benchmark<
 
     this.failedReason = this.config.jobFailedReason;
 
-    const queue = new Queue(this.config.queueName, {});
+    const queue = new Queue(this.config.queueName, { connection });
     await queue.waitUntilReady();
 
     const jobsTotal = this.config.warmupJobsNum + this.config.benchmarkJobsNum;
@@ -96,7 +99,7 @@ export class BullmqWorkerBenchmark extends Benchmark<
     const client = await queue.client;
     this.report.result.redisVersion = await Util.getRedisVersion(client);
     this.queue = queue;
-  };
+  }
 
   public async run(): Promise<void> {
     const { result } = this.report;
@@ -104,52 +107,56 @@ export class BullmqWorkerBenchmark extends Benchmark<
       warmupJobsNum,
       benchmarkJobsNum,
       queueName,
-      jobFailureProbability
+      jobFailureProbability,
     } = this.config;
     const jobsTotal = warmupJobsNum + benchmarkJobsNum;
     let count = 0;
     let startTime = 0;
 
-    this.worker = new Worker(queueName, async (job: any) => {
-      count++;
-      if (count === warmupJobsNum) {
-        startTime = Date.now();
-      } else if (count === jobsTotal) {
-        result.time = Date.now() - startTime;
-        result.rate = Math.round((1000 * jobsTotal) / result.time);
-        result.rateUnit = "jobs/sec";
-      }
-
-      if (jobFailureProbability > 0) {
-        if (jobFailureProbability < 1) {
-          if (Math.random() <= jobFailureProbability) {
-            throw this.failedReason;
+    return new Promise((resolve) => {
+      this.worker = new Worker(
+        queueName,
+        async (job: any) => {
+          count++;
+          if (count === warmupJobsNum) {
+            startTime = Date.now();
+          } else if (count === jobsTotal) {
+            result.time = Date.now() - startTime;
+            result.rate = Math.round((1000 * jobsTotal) / result.time);
+            result.rateUnit = "jobs/sec";
+            resolve();
           }
-        } else {
-          // jobFailureProbability === 1
-          throw this.failedReason;
-        }
-      }
-      return this.result;
-    });
 
-    await new Promise<void>(resolve => {
-      this.worker.once("drained", async () => {
-        resolve();
-      });
+          if (jobFailureProbability > 0) {
+            if (jobFailureProbability < 1) {
+              if (Math.random() <= jobFailureProbability) {
+                throw this.failedReason;
+              }
+            } else {
+              // jobFailureProbability === 1
+              throw this.failedReason;
+            }
+          }
+          return this.result;
+        },
+        {
+          ...this.config.workerOptions,
+          connection,
+        }
+      );
     });
-  };
+  }
 
   public async tearDown(): Promise<void> {
     if (this.queue) {
       const client = await this.queue.client;
-      await Util.flushQueueKeys(client, this.config.queueName);
+      await Util.flushQueueKeys(client as Redis, this.config.queueName);
       await this.queue.close();
     }
     if (this.worker) {
       await this.worker.close();
     }
-  };
+  }
 }
 
 export interface BullmqWorkerBenchmarkConfig extends BenchmarkConfig {

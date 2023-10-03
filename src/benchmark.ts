@@ -1,22 +1,22 @@
 import { errorToObject } from "./util";
+import { log } from "./log"
 
 const DEFAULT_CONFIG = {
-  timeout: 10000
+  timeout: 10000,
 };
 
 export abstract class Benchmark<
-  C extends BenchmarkConfig,
-  R extends BenchmarkReport
+  Config extends BenchmarkConfig,
+  Report extends BenchmarkReport
 > {
   protected aborted = false;
-  protected config: C;
-  protected report: R = { execution: {}, result: {} } as R;
+  protected report: Report = { execution: {}, result: {} } as Report;
 
-  constructor(config: C, defaultConfig: any) {
+  constructor(public config: Config, defaultConfig: any) {
     this.config = {
       ...DEFAULT_CONFIG,
       ...defaultConfig,
-      ...config
+      ...config,
     };
     if (!this.config.name) {
       throw new Error("config.name is required");
@@ -30,9 +30,9 @@ export abstract class Benchmark<
     this.report.config = this.config;
   }
 
-  public async execute(): Promise<R> {
+  public async execute(): Promise<Report> {
     const { timeout } = this.config;
-    return new Promise<R>(async resolve => {
+    return new Promise<Report>(async (resolve) => {
       let timer: NodeJS.Timer;
 
       const resolveAndClearTimeout = () => {
@@ -48,6 +48,8 @@ export abstract class Benchmark<
         resolveAndClearTimeout();
       }, timeout);
 
+      log.info(`Running benchmark: ${this.config.name}`);
+
       const startTime = Date.now();
       this.report.execution.executedOn = new Date().toISOString();
 
@@ -56,27 +58,26 @@ export abstract class Benchmark<
         this.report.execution.finishedOn = new Date().toISOString();
         this.report.execution.totalDuration = Date.now() - startTime;
         resolveAndClearTimeout();
-      } catch(error) {
+      } catch (error) {
         this.report.execution.finishedOn = new Date().toISOString();
         this.report.execution.totalDuration = Date.now() - startTime;
         this.report.error = errorToObject(error);
         resolveAndClearTimeout(); // always swallow rejections
       }
-
     });
-  };
+  }
 
   public abort(): void {
     this.aborted = true;
-  };
+  }
 
-  public getConfig(): C {
+  public getConfig(): Config {
     return this.config;
-  };
+  }
 
-  public getReport(): R {
+  public getReport(): Report {
     return this.report;
-  };
+  }
 
   protected abstract setUp(): Promise<void>;
   protected abstract run(): Promise<void>;
@@ -98,10 +99,11 @@ export abstract class Benchmark<
       this.report.execution.runDuration = Date.now() - runTime;
     } finally {
       const tearDownTime = Date.now();
+      log.info("Tearing down...");
       await this.tearDown();
       this.report.execution.tearDownDuration = Date.now() - tearDownTime;
     }
-  };
+  }
 }
 
 export interface BenchmarkConfig {

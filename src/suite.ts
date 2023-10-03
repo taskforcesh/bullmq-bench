@@ -1,4 +1,5 @@
 import { Benchmark } from "./benchmark";
+import { log } from "./log";
 
 export class Suite {
   benchmarks: Benchmark<any, any>[] = [];
@@ -10,11 +11,11 @@ export class Suite {
   }
 
   async run() {
-    console.log(`Running suite: ${this.name}`);
+    log.info(`Running suite for: ${this.name}`);
     for (let i = 0; i < this.benchmarks.length; i++) {
       const benchmark = this.benchmarks[i];
       const result = await benchmark.execute();
-      console.log(`Result: ${JSON.stringify(result)}`);
+      log.success(`Result for ${benchmark.config.name} : ${JSON.stringify(result)}`);
     }
   }
 }
